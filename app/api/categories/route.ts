@@ -25,6 +25,7 @@ export async function POST(request: NextRequest) {
         name: body.name,
         icon: body.icon,
         color: body.color,
+        type: body.type || 'life',
         order: body.order || 0,
       },
     })

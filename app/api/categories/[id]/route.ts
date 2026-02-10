@@ -14,6 +14,7 @@ export async function PATCH(
         name: body.name,
         icon: body.icon,
         color: body.color,
+        ...(body.type !== undefined && { type: body.type }),
         ...(body.order !== undefined && { order: body.order }),
       },
     })

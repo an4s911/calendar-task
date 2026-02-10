@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { Task, Category, Settings, CalendarView } from './types'
+import { Task, Category, Settings, CalendarView, CategoryFilter } from './types'
 
 interface AppState {
   tasks: Task[]
@@ -8,6 +8,7 @@ interface AppState {
   currentView: CalendarView
   selectedDate: Date
   isLoading: boolean
+  categoryFilter: CategoryFilter
 
   setTasks: (tasks: Task[]) => void
   setCategories: (categories: Category[]) => void
@@ -15,6 +16,7 @@ interface AppState {
   setCurrentView: (view: CalendarView) => void
   setSelectedDate: (date: Date) => void
   setIsLoading: (loading: boolean) => void
+  setCategoryFilter: (filter: CategoryFilter) => void
 
   addTask: (task: Task) => void
   updateTask: (id: string, task: Partial<Task>) => void
@@ -32,6 +34,7 @@ export const useStore = create<AppState>((set) => ({
   currentView: 'month',
   selectedDate: new Date(),
   isLoading: false,
+  categoryFilter: 'all',
 
   setTasks: (tasks) => set({ tasks }),
   setCategories: (categories) => set({ categories }),
@@ -39,6 +42,7 @@ export const useStore = create<AppState>((set) => ({
   setCurrentView: (view) => set({ currentView: view }),
   setSelectedDate: (date) => set({ selectedDate: date }),
   setIsLoading: (loading) => set({ isLoading: loading }),
+  setCategoryFilter: (filter) => set({ categoryFilter: filter }),
 
   addTask: (task) => set((state) => ({ tasks: [...state.tasks, task] })),
   updateTask: (id, updatedTask) =>

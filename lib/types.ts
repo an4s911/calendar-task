@@ -20,6 +20,7 @@ export interface Category {
   name: string
   icon: string
   color: string
+  type: 'life' | 'business'
   order: number
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -39,6 +40,8 @@ export interface Settings {
 export type TaskStatus = 'not-started' | 'waiting' | 'in-progress' | 'completed'
 export type TaskPriority = 'low' | 'medium' | 'high'
 export type CalendarView = 'month' | 'week' | 'day'
+export type CategoryType = 'life' | 'business'
+export type CategoryFilter = 'all' | 'life' | 'business'
 
 export const STATUS_COLORS = {
   'not-started': '#6b7280',

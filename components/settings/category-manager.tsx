@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useStore } from '@/lib/store'
-import { Category } from '@/lib/types'
+import { Category, CategoryType } from '@/lib/types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -16,11 +16,13 @@ export default function CategoryManager() {
   const [name, setName] = useState('')
   const [icon, setIcon] = useState('')
   const [color, setColor] = useState('#3b82f6')
+  const [type, setType] = useState<CategoryType>('life')
 
   const resetForm = () => {
     setName('')
     setIcon('')
     setColor('#3b82f6')
+    setType('life')
     setEditingCategory(null)
   }
 
@@ -30,6 +32,7 @@ export default function CategoryManager() {
       setName(category.name)
       setIcon(category.icon)
       setColor(category.color)
+      setType(category.type)
     } else {
       resetForm()
     }
@@ -45,7 +48,7 @@ export default function CategoryManager() {
         const response = await fetch(`/api/categories/${editingCategory.id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, icon, color }),
+          body: JSON.stringify({ name, icon, color, type }),
         })
 
         if (response.ok) {
@@ -61,6 +64,7 @@ export default function CategoryManager() {
             name,
             icon,
             color,
+            type,
             order: categories.length,
           }),
         })
@@ -96,6 +100,50 @@ export default function CategoryManager() {
     }
   }
 
+  const lifeCategories = categories.filter(c => c.type === 'life')
+  const businessCategories = categories.filter(c => c.type === 'business')
+
+  const CategoryCard = ({ category }: { category: Category }) => (
+    <div
+      key={category.id}
+      className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800"
+    >
+      <div className="flex items-center space-x-3 flex-1">
+        <span className="text-2xl">{category.icon}</span>
+        <div className="flex-1">
+          <div className="flex items-center gap-2">
+            <div className="font-medium text-gray-900 dark:text-white">
+              {category.name}
+            </div>
+            <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400">
+              {category.type}
+            </span>
+          </div>
+          <div
+            className="w-16 h-2 rounded mt-1"
+            style={{ backgroundColor: category.color }}
+          />
+        </div>
+      </div>
+      <div className="flex space-x-1">
+        <Button
+          size="icon"
+          variant="ghost"
+          onClick={() => handleOpenModal(category)}
+        >
+          <Pencil className="h-4 w-4" />
+        </Button>
+        <Button
+          size="icon"
+          variant="ghost"
+          onClick={() => handleDelete(category)}
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      </div>
+    </div>
+  )
+
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
@@ -108,42 +156,42 @@ export default function CategoryManager() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {categories.map((category) => (
-          <div
-            key={category.id}
-            className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800"
-          >
-            <div className="flex items-center space-x-3">
-              <span className="text-2xl">{category.icon}</span>
-              <div className="flex-1">
-                <div className="font-medium text-gray-900 dark:text-white">
-                  {category.name}
-                </div>
-                <div
-                  className="w-16 h-2 rounded mt-1"
-                  style={{ backgroundColor: category.color }}
-                />
-              </div>
-            </div>
-            <div className="flex space-x-1">
-              <Button
-                size="icon"
-                variant="ghost"
-                onClick={() => handleOpenModal(category)}
-              >
-                <Pencil className="h-4 w-4" />
-              </Button>
-              <Button
-                size="icon"
-                variant="ghost"
-                onClick={() => handleDelete(category)}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Life Categories */}
+        <div>
+          <h4 className="text-md font-semibold text-gray-700 dark:text-gray-300 mb-3">
+            Life Categories
+          </h4>
+          <div className="space-y-3">
+            {lifeCategories.length > 0 ? (
+              lifeCategories.map((category) => (
+                <CategoryCard key={category.id} category={category} />
+              ))
+            ) : (
+              <p className="text-sm text-gray-500 dark:text-gray-400 italic">
+                No life categories yet
+              </p>
+            )}
           </div>
-        ))}
+        </div>
+
+        {/* Business Categories */}
+        <div>
+          <h4 className="text-md font-semibold text-gray-700 dark:text-gray-300 mb-3">
+            Business Categories
+          </h4>
+          <div className="space-y-3">
+            {businessCategories.length > 0 ? (
+              businessCategories.map((category) => (
+                <CategoryCard key={category.id} category={category} />
+              ))
+            ) : (
+              <p className="text-sm text-gray-500 dark:text-gray-400 italic">
+                No business categories yet
+              </p>
+            )}
+          </div>
+        </div>
       </div>
 
       <Dialog open={showModal} onOpenChange={setShowModal}>
@@ -199,6 +247,34 @@ export default function CategoryManager() {
                   placeholder="#3b82f6"
                   className="flex-1"
                 />
+              </div>
+            </div>
+
+            <div>
+              <Label>Category Type *</Label>
+              <div className="flex items-center space-x-4 mt-2">
+                <label className="flex items-center space-x-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="categoryType"
+                    value="life"
+                    checked={type === 'life'}
+                    onChange={(e) => setType(e.target.value as CategoryType)}
+                    className="w-4 h-4 text-blue-600"
+                  />
+                  <span className="text-sm text-gray-900 dark:text-white">Life</span>
+                </label>
+                <label className="flex items-center space-x-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="categoryType"
+                    value="business"
+                    checked={type === 'business'}
+                    onChange={(e) => setType(e.target.value as CategoryType)}
+                    className="w-4 h-4 text-blue-600"
+                  />
+                  <span className="text-sm text-gray-900 dark:text-white">Business</span>
+                </label>
               </div>
             </div>
 

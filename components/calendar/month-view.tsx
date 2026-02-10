@@ -23,7 +23,7 @@ import TaskFormModal from '@/components/tasks/task-form-modal'
 import DayTasksModal from './day-tasks-modal'
 
 export default function MonthView() {
-  const { tasks, selectedDate, setSelectedDate } = useStore()
+  const { tasks, categories, setSelectedDate, categoryFilter, setCategoryFilter } = useStore()
   const [currentMonth, setCurrentMonth] = useState(new Date())
   const [selectedTask, setSelectedTask] = useState<Task | null>(null)
   const [showTaskModal, setShowTaskModal] = useState(false)
@@ -65,7 +65,12 @@ export default function MonthView() {
     return tasks.filter((task) => {
       if (!task.date) return false
       const taskDate = new Date(task.date)
-      return isSameDay(taskDate, date) && task.show
+      if (!isSameDay(taskDate, date) || !task.show) return false
+
+      // Apply category filter
+      if (categoryFilter === 'all') return true
+      const taskCategory = categories.find(c => c.id === task.categoryId)
+      return taskCategory?.type === categoryFilter
     })
   }
 
@@ -92,20 +97,48 @@ export default function MonthView() {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
       {/* Header */}
-      <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-          {format(currentMonth, 'MMMM yyyy')}
-        </h2>
-        <div className="flex items-center space-x-2">
-          <Button variant="outline" size="sm" onClick={goToToday}>
-            Today
+      <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+        {/* Filter Buttons */}
+        <div className="flex items-center justify-center space-x-2 mb-4">
+          <Button
+            variant={categoryFilter === 'all' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setCategoryFilter('all')}
+          >
+            All
           </Button>
-          <Button variant="outline" size="icon" onClick={previousMonth}>
-            <ChevronLeft className="h-4 w-4" />
+          <Button
+            variant={categoryFilter === 'life' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setCategoryFilter('life')}
+          >
+            Life
           </Button>
-          <Button variant="outline" size="icon" onClick={nextMonth}>
-            <ChevronRight className="h-4 w-4" />
+          <Button
+            variant={categoryFilter === 'business' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setCategoryFilter('business')}
+          >
+            Business
           </Button>
+        </div>
+
+        {/* Month Navigation */}
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+            {format(currentMonth, 'MMMM yyyy')}
+          </h2>
+          <div className="flex items-center space-x-2">
+            <Button variant="outline" size="sm" onClick={goToToday}>
+              Today
+            </Button>
+            <Button variant="outline" size="icon" onClick={previousMonth}>
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <Button variant="outline" size="icon" onClick={nextMonth}>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </div>
 
