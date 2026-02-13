@@ -138,10 +138,10 @@ export default function MonthView() {
             <Button variant="outline" size="sm" onClick={goToToday}>
               Today
             </Button>
-            <Button variant="outline" size="icon" onClick={previousMonth}>
+            <Button variant="outline" size="sm" onClick={previousMonth}>
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            <Button variant="outline" size="icon" onClick={nextMonth}>
+            <Button variant="outline" size="sm" onClick={nextMonth}>
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
