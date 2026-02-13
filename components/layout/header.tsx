@@ -1,15 +1,23 @@
 "use client";
 
-import { Calendar, Moon, Sun, Plus } from "lucide-react";
+import { Calendar, Moon, Sun, Plus, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useStore } from "@/lib/store";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import TaskFormModal from "@/components/tasks/task-form-modal";
 
 export default function Header() {
+  const router = useRouter();
   const { settings, setSettings } = useStore();
   const isDark = settings?.darkMode ?? false;
   const [showTaskModal, setShowTaskModal] = useState(false);
+
+  const handleLogout = async () => {
+    await fetch("/api/auth/logout", { method: "POST" });
+    router.push("/login");
+    router.refresh();
+  };
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", isDark);
@@ -61,6 +69,14 @@ export default function Header() {
           >
             <Plus className="h-5 w-5" />
             <span>New Task</span>
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={handleLogout}
+            title="Log out"
+          >
+            <LogOut className="h-5 w-5" />
           </Button>
         </div>
       </div>
