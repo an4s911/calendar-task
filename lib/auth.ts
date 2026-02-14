@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import type { NextRequest } from "next/server";
 
 const COOKIE_NAME = "auth-token";
-const JWT_EXPIRY = "7d";
+const JWT_EXPIRY = "30d";
 
 function getSecret() {
   const s = process.env.JWT_SECRET;
@@ -54,7 +54,7 @@ export async function getSession(): Promise<SessionPayload | null> {
 
 export function authCookieHeader(token: string): string {
   const secure = process.env.NODE_ENV === "production" ? "; Secure" : "";
-  return `${COOKIE_NAME}=${token}; HttpOnly; Path=/; SameSite=Strict; Max-Age=${7 * 24 * 3600}${secure}`;
+  return `${COOKIE_NAME}=${token}; HttpOnly; Path=/; SameSite=Strict; Max-Age=${30 * 24 * 3600}${secure}`;
 }
 
 export function clearCookieHeader(): string {
