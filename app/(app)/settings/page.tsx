@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useStore } from "@/lib/store";
 import { Button } from "@/components/ui/button";
+import { AlertDialog } from "@/components/ui/confirm-dialog";
 import CategoryManager from "@/components/settings/category-manager";
 import ChangePasswordForm from "@/components/auth/change-password-form";
 
@@ -13,6 +14,7 @@ export default function SettingsPage() {
     "month",
   );
   const [showCompleted, setShowCompleted] = useState(true);
+  const [showSavedAlert, setShowSavedAlert] = useState(false);
 
   useEffect(() => {
     async function fetchData() {
@@ -47,7 +49,7 @@ export default function SettingsPage() {
       body: JSON.stringify(updatedSettings),
     });
 
-    alert("Settings saved successfully!");
+    setShowSavedAlert(true);
   };
 
   return (
@@ -120,6 +122,13 @@ export default function SettingsPage() {
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mt-6">
         <CategoryManager />
       </div>
+
+      <AlertDialog
+        open={showSavedAlert}
+        onOpenChange={setShowSavedAlert}
+        title="Success"
+        message="Settings saved successfully!"
+      />
 
       {/* Security Section */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mt-6">

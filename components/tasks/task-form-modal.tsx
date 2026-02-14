@@ -4,17 +4,18 @@ import { useState, useEffect, SubmitEvent } from "react";
 import { useStore } from "@/lib/store";
 import { Task, TaskStatus, TaskPriority } from "@/lib/types";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalTitle,
+  ModalFooter,
+} from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
+import { ConfirmDialog, AlertDialog } from "@/components/ui/confirm-dialog";
 import { Trash2 } from "lucide-react";
 
 interface TaskFormModalProps {
@@ -32,6 +33,8 @@ export default function TaskFormModal({
 }: TaskFormModalProps) {
   const { categories, addTask, updateTask, deleteTask } = useStore();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [alertMessage, setAlertMessage] = useState<string | null>(null);
 
   // Form state
   const [title, setTitle] = useState("");
@@ -119,185 +122,207 @@ export default function TaskFormModal({
       onOpenChange(false);
     } catch (error) {
       console.error("Error saving task:", error);
-      alert("Failed to save task");
+      setAlertMessage("Failed to save task");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleDelete = async () => {
+  const handleDeleteClick = () => {
+    setShowDeleteConfirm(true);
+  };
+
+  const handleDeleteConfirm = async () => {
     if (!task) return;
 
-    if (confirm("Are you sure you want to delete this task?")) {
-      try {
-        const response = await fetch(`/api/tasks/${task.id}`, {
-          method: "DELETE",
-        });
+    try {
+      const response = await fetch(`/api/tasks/${task.id}`, {
+        method: "DELETE",
+      });
 
-        if (response.ok) {
-          deleteTask(task.id);
-          onOpenChange(false);
-        }
-      } catch (error) {
-        console.error("Error deleting task:", error);
-        alert("Failed to delete task");
+      if (response.ok) {
+        deleteTask(task.id);
+        onOpenChange(false);
       }
+    } catch (error) {
+      console.error("Error deleting task:", error);
+      setAlertMessage("Failed to delete task");
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent onClose={() => onOpenChange(false)}>
-        <DialogHeader>
-          <DialogTitle>{task ? "Edit Task" : "Create New Task"}</DialogTitle>
-        </DialogHeader>
+    <>
+      <Modal open={open} onOpenChange={onOpenChange}>
+        <ModalContent onClose={() => onOpenChange(false)}>
+          <ModalHeader>
+            <ModalTitle>{task ? "Edit Task" : "Create New Task"}</ModalTitle>
+          </ModalHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Title */}
-          <div>
-            <Label htmlFor="title">Title *</Label>
-            <Input
-              id="title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Enter task title"
-              required
-            />
-          </div>
-
-          {/* Category */}
-          <div>
-            <Label htmlFor="category">Category *</Label>
-            <Select
-              id="category"
-              value={categoryId}
-              onChange={(e) => setCategoryId(e.target.value)}
-              required
-            >
-              {categories.map((cat) => (
-                <option key={cat.id} value={cat.id}>
-                  {cat.icon} {cat.name}
-                </option>
-              ))}
-            </Select>
-          </div>
-
-          {/* Notes/Description */}
-          <div>
-            <Label htmlFor="notes">Notes</Label>
-            <Textarea
-              id="notes"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Add notes or description..."
-              rows={4}
-            />
-          </div>
-
-          {/* Date */}
-          <div>
-            <Label htmlFor="date">Date</Label>
-            <Input
-              id="date"
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-            />
-          </div>
-
-          {/* Time Range */}
-          <div className="grid grid-cols-2 gap-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Title */}
             <div>
-              <Label htmlFor="startTime">Start Time</Label>
+              <Label htmlFor="title">Title *</Label>
               <Input
-                id="startTime"
-                type="time"
-                value={startTime}
-                onChange={(e) => setStartTime(e.target.value)}
+                id="title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Enter task title"
+                required
               />
             </div>
+
+            {/* Category */}
             <div>
-              <Label htmlFor="endTime">End Time</Label>
-              <Input
-                id="endTime"
-                type="time"
-                value={endTime}
-                onChange={(e) => setEndTime(e.target.value)}
+              <Label htmlFor="category">Category *</Label>
+              <Select
+                id="category"
+                value={categoryId}
+                onChange={(e) => setCategoryId(e.target.value)}
+                required
+              >
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.icon} {cat.name}
+                  </option>
+                ))}
+              </Select>
+            </div>
+
+            {/* Notes/Description */}
+            <div>
+              <Label htmlFor="notes">Notes</Label>
+              <Textarea
+                id="notes"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Add notes or description..."
+                rows={4}
               />
             </div>
-          </div>
 
-          {/* Status and Priority */}
-          <div className="grid grid-cols-2 gap-4">
+            {/* Date */}
             <div>
-              <Label htmlFor="status">Status</Label>
-              <Select
-                id="status"
-                value={status}
-                onChange={(e) => setStatus(e.target.value as TaskStatus)}
-              >
-                <option value="not-started">Not Started</option>
-                <option value="waiting">Waiting</option>
-                <option value="in-progress">In Progress</option>
-                <option value="completed">Completed</option>
-              </Select>
+              <Label htmlFor="date">Date</Label>
+              <Input
+                id="date"
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+              />
             </div>
-            <div>
-              <Label htmlFor="priority">Priority</Label>
-              <Select
-                id="priority"
-                value={priority}
-                onChange={(e) => setPriority(e.target.value as TaskPriority)}
-              >
-                <option value="low">Low</option>
-                <option value="medium">Medium</option>
-                <option value="high">High</option>
-              </Select>
-            </div>
-          </div>
 
-          {/* Show/Hide Toggle */}
-          <div className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              id="show"
-              checked={show}
-              onChange={(e) => setShow(e.target.checked)}
-              className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-            />
-            <Label htmlFor="show">Show in calendar</Label>
-          </div>
-
-          <DialogFooter>
-            <div className="flex justify-between w-full">
+            {/* Time Range */}
+            <div className="grid grid-cols-2 gap-4">
               <div>
-                {task && (
+                <Label htmlFor="startTime">Start Time</Label>
+                <Input
+                  id="startTime"
+                  type="time"
+                  value={startTime}
+                  onChange={(e) => setStartTime(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="endTime">End Time</Label>
+                <Input
+                  id="endTime"
+                  type="time"
+                  value={endTime}
+                  onChange={(e) => setEndTime(e.target.value)}
+                />
+              </div>
+            </div>
+
+            {/* Status and Priority */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="status">Status</Label>
+                <Select
+                  id="status"
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value as TaskStatus)}
+                >
+                  <option value="not-started">Not Started</option>
+                  <option value="waiting">Waiting</option>
+                  <option value="in-progress">In Progress</option>
+                  <option value="completed">Completed</option>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="priority">Priority</Label>
+                <Select
+                  id="priority"
+                  value={priority}
+                  onChange={(e) => setPriority(e.target.value as TaskPriority)}
+                >
+                  <option value="low">Low</option>
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
+                </Select>
+              </div>
+            </div>
+
+            {/* Show/Hide Toggle */}
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="show"
+                checked={show}
+                onChange={(e) => setShow(e.target.checked)}
+                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+              />
+              <Label htmlFor="show">Show in calendar</Label>
+            </div>
+
+            <ModalFooter>
+              <div className="flex justify-between w-full">
+                <div>
+                  {task && (
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      onClick={handleDeleteClick}
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete
+                    </Button>
+                  )}
+                </div>
+                <div className="flex space-x-2">
                   <Button
                     type="button"
-                    variant="destructive"
-                    onClick={handleDelete}
+                    variant="outline"
+                    onClick={() => onOpenChange(false)}
                   >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Delete
+                    Cancel
                   </Button>
-                )}
+                  <Button type="submit" disabled={isSubmitting}>
+                    {isSubmitting ? "Saving..." : task ? "Update" : "Create"}
+                  </Button>
+                </div>
               </div>
-              <div className="flex space-x-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => onOpenChange(false)}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={isSubmitting}>
-                  {isSubmitting ? "Saving..." : task ? "Update" : "Create"}
-                </Button>
-              </div>
-            </div>
-          </DialogFooter>
-        </form>
-      </DialogContent>
-    </Dialog>
+            </ModalFooter>
+          </form>
+        </ModalContent>
+      </Modal>
+
+      <ConfirmDialog
+        open={showDeleteConfirm}
+        onOpenChange={setShowDeleteConfirm}
+        title="Delete Task"
+        message="Are you sure you want to delete this task?"
+        confirmLabel="Delete"
+        variant="destructive"
+        onConfirm={handleDeleteConfirm}
+      />
+
+      <AlertDialog
+        open={!!alertMessage}
+        onOpenChange={() => setAlertMessage(null)}
+        title="Error"
+        message={alertMessage ?? ""}
+        variant="destructive"
+      />
+    </>
   );
 }

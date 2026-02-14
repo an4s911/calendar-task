@@ -6,6 +6,7 @@ import { useStore } from "@/lib/store";
 import TaskCard from "@/components/tasks/task-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ConfirmDialog, AlertDialog } from "@/components/ui/confirm-dialog";
 import { Pencil, Trash2, Check, X } from "lucide-react";
 
 interface CategoryColumnProps {
@@ -22,6 +23,8 @@ export default function CategoryColumn({
   const { updateCategory, deleteCategory } = useStore();
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(category.name);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [alertMessage, setAlertMessage] = useState<string | null>(null);
 
   const handleSave = async () => {
     if (editName.trim() && editName !== category.name) {
@@ -47,24 +50,22 @@ export default function CategoryColumn({
     setIsEditing(false);
   };
 
-  const handleDelete = async () => {
-    if (
-      confirm(
-        `Delete "${category.name}" category? This will affect ${tasks.length} task(s).`,
-      )
-    ) {
-      try {
-        const response = await fetch(`/api/categories/${category.id}`, {
-          method: "DELETE",
-        });
+  const handleDeleteClick = () => {
+    setShowDeleteConfirm(true);
+  };
 
-        if (response.ok) {
-          deleteCategory(category.id);
-        }
-      } catch (error) {
-        console.error("Error deleting category:", error);
-        alert("Failed to delete category");
+  const handleDeleteConfirm = async () => {
+    try {
+      const response = await fetch(`/api/categories/${category.id}`, {
+        method: "DELETE",
+      });
+
+      if (response.ok) {
+        deleteCategory(category.id);
       }
+    } catch (error) {
+      console.error("Error deleting category:", error);
+      setAlertMessage("Failed to delete category");
     }
   };
 
@@ -139,7 +140,7 @@ export default function CategoryColumn({
                 size="icon"
                 variant="ghost"
                 className="h-6 w-6"
-                onClick={handleDelete}
+                onClick={handleDeleteClick}
               >
                 <Trash2 className="h-3 w-3 text-red-600" />
               </Button>
@@ -161,6 +162,24 @@ export default function CategoryColumn({
           ))
         )}
       </div>
+
+      <ConfirmDialog
+        open={showDeleteConfirm}
+        onOpenChange={setShowDeleteConfirm}
+        title="Delete Category"
+        message={`Delete "${category.name}" category? This will affect ${tasks.length} task(s).`}
+        confirmLabel="Delete"
+        variant="destructive"
+        onConfirm={handleDeleteConfirm}
+      />
+
+      <AlertDialog
+        open={!!alertMessage}
+        onOpenChange={() => setAlertMessage(null)}
+        title="Error"
+        message={alertMessage ?? ""}
+        variant="destructive"
+      />
     </div>
   );
 }

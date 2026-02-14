@@ -7,12 +7,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalTitle,
+  ModalFooter,
+} from "@/components/ui/modal";
+import { ConfirmDialog, AlertDialog } from "@/components/ui/confirm-dialog";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 
 export default function CategoryManager() {
@@ -24,6 +25,10 @@ export default function CategoryManager() {
   const [icon, setIcon] = useState("");
   const [color, setColor] = useState("#3b82f6");
   const [type, setType] = useState<CategoryType>("life");
+  const [deletingCategory, setDeletingCategory] = useState<Category | null>(
+    null,
+  );
+  const [alertMessage, setAlertMessage] = useState<string | null>(null);
 
   const resetForm = () => {
     setName("");
@@ -86,28 +91,28 @@ export default function CategoryManager() {
       resetForm();
     } catch (error) {
       console.error("Error saving category:", error);
-      alert("Failed to save category");
+      setAlertMessage("Failed to save category");
     }
   };
 
-  const handleDelete = async (category: Category) => {
-    if (
-      confirm(
-        `Are you sure you want to delete "${category.name}"? This will affect all tasks in this category.`,
-      )
-    ) {
-      try {
-        const response = await fetch(`/api/categories/${category.id}`, {
-          method: "DELETE",
-        });
+  const handleDeleteClick = (category: Category) => {
+    setDeletingCategory(category);
+  };
 
-        if (response.ok) {
-          deleteCategory(category.id);
-        }
-      } catch (error) {
-        console.error("Error deleting category:", error);
-        alert("Failed to delete category");
+  const handleDeleteConfirm = async () => {
+    if (!deletingCategory) return;
+
+    try {
+      const response = await fetch(`/api/categories/${deletingCategory.id}`, {
+        method: "DELETE",
+      });
+
+      if (response.ok) {
+        deleteCategory(deletingCategory.id);
       }
+    } catch (error) {
+      console.error("Error deleting category:", error);
+      setAlertMessage("Failed to delete category");
     }
   };
 
@@ -147,7 +152,7 @@ export default function CategoryManager() {
         <Button
           size="icon"
           variant="ghost"
-          onClick={() => handleDelete(category)}
+          onClick={() => handleDeleteClick(category)}
         >
           <Trash2 className="h-4 w-4" />
         </Button>
@@ -205,13 +210,13 @@ export default function CategoryManager() {
         </div>
       </div>
 
-      <Dialog open={showModal} onOpenChange={setShowModal}>
-        <DialogContent onClose={() => setShowModal(false)}>
-          <DialogHeader>
-            <DialogTitle>
+      <Modal open={showModal} onOpenChange={setShowModal}>
+        <ModalContent onClose={() => setShowModal(false)}>
+          <ModalHeader>
+            <ModalTitle>
               {editingCategory ? "Edit Category" : "Add New Category"}
-            </DialogTitle>
-          </DialogHeader>
+            </ModalTitle>
+          </ModalHeader>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
@@ -293,7 +298,7 @@ export default function CategoryManager() {
               </div>
             </div>
 
-            <DialogFooter>
+            <ModalFooter>
               <Button
                 type="button"
                 variant="outline"
@@ -304,10 +309,30 @@ export default function CategoryManager() {
               <Button type="submit">
                 {editingCategory ? "Update" : "Create"}
               </Button>
-            </DialogFooter>
+            </ModalFooter>
           </form>
-        </DialogContent>
-      </Dialog>
+        </ModalContent>
+      </Modal>
+
+      <ConfirmDialog
+        open={!!deletingCategory}
+        onOpenChange={(open) => {
+          if (!open) setDeletingCategory(null);
+        }}
+        title="Delete Category"
+        message={`Are you sure you want to delete "${deletingCategory?.name}"? This will affect all tasks in this category.`}
+        confirmLabel="Delete"
+        variant="destructive"
+        onConfirm={handleDeleteConfirm}
+      />
+
+      <AlertDialog
+        open={!!alertMessage}
+        onOpenChange={() => setAlertMessage(null)}
+        title="Error"
+        message={alertMessage ?? ""}
+        variant="destructive"
+      />
     </div>
   );
 }
