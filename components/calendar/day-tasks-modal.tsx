@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { useStore } from "@/lib/store";
 import { Task } from "@/lib/types";
-import { format } from "date-fns";
+import { format, isSameDay } from "date-fns";
 import {
   Modal,
   ModalContent,
@@ -19,18 +20,24 @@ interface DayTasksModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   date: Date | null;
-  tasks: Task[];
 }
 
 export default function DayTasksModal({
   open,
   onOpenChange,
   date,
-  tasks,
 }: DayTasksModalProps) {
+  const { tasks: allTasks } = useStore();
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [showTaskModal, setShowTaskModal] = useState(false);
   const [showNewTaskModal, setShowNewTaskModal] = useState(false);
+
+  const tasks = date
+    ? allTasks.filter((task) => {
+        if (!task.date || !task.show) return false;
+        return isSameDay(new Date(task.date), date);
+      })
+    : [];
 
   const handleTaskClick = (task: Task) => {
     setSelectedTask(task);

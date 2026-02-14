@@ -233,7 +233,6 @@ export default function MonthView() {
           else setShowDayModal(open);
         }}
         date={selectedDay}
-        tasks={selectedDay ? getTasksForDay(selectedDay) : []}
       />
     </div>
   );
