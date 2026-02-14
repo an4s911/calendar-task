@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useStore } from "@/lib/store";
 import { Task, TaskStatus, TaskPriority } from "@/lib/types";
 import {
@@ -61,16 +61,17 @@ export default function TaskModal({
   const { tasks, updateTask } = useStore();
   const [showFormModal, setShowFormModal] = useState(false);
   const [currentTask, setCurrentTask] = useState<Task | null>(null);
+  const [trackedTaskId, setTrackedTaskId] = useState<string | null>(null);
 
   // Sync from prop only when task ID changes or modal opens — not on every re-render
-  useEffect(() => {
-    if (task && open) {
-      setCurrentTask(task);
-    }
-    if (!open) {
-      setCurrentTask(null);
-    }
-  }, [task?.id, open]);
+  if (task && open && task.id !== trackedTaskId) {
+    setCurrentTask(task);
+    setTrackedTaskId(task.id);
+  }
+  if (!open && trackedTaskId !== null) {
+    setCurrentTask(null);
+    setTrackedTaskId(null);
+  }
 
   if (!currentTask) return null;
 
