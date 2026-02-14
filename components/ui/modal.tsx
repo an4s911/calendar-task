@@ -2,13 +2,13 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 import { X } from "lucide-react";
 
-interface DialogProps {
+interface ModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   children: React.ReactNode;
 }
 
-export function Dialog({ open, onOpenChange, children }: DialogProps) {
+export function Modal({ open, onOpenChange, children }: ModalProps) {
   if (!open) return null;
 
   return (
@@ -17,14 +17,12 @@ export function Dialog({ open, onOpenChange, children }: DialogProps) {
         className="fixed inset-0 bg-black/50"
         onClick={() => onOpenChange(false)}
       />
-      <div className="relative z-50 max-h-[90vh] overflow-y-auto">
-        {children}
-      </div>
+      <div className="relative z-50">{children}</div>
     </div>
   );
 }
 
-export function DialogContent({
+export function ModalContent({
   children,
   className,
   onClose,
@@ -36,14 +34,14 @@ export function DialogContent({
   return (
     <div
       className={cn(
-        "bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-2xl",
+        "relative bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-[min(90vw,768px)] max-h-[85vh] overflow-y-auto",
         className,
       )}
     >
       {onClose && (
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+          className="absolute top-3 right-3 p-1.5 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:text-gray-200 dark:hover:bg-gray-700 transition-colors"
         >
           <X className="h-5 w-5" />
         </button>
@@ -53,17 +51,17 @@ export function DialogContent({
   );
 }
 
-export function DialogHeader({
+export function ModalHeader({
   children,
   className,
 }: {
   children: React.ReactNode;
   className?: string;
 }) {
-  return <div className={cn("mb-4", className)}>{children}</div>;
+  return <div className={cn("mb-4 pr-10", className)}>{children}</div>;
 }
 
-export function DialogTitle({
+export function ModalTitle({
   children,
   className,
 }: {
@@ -82,7 +80,7 @@ export function DialogTitle({
   );
 }
 
-export function DialogFooter({
+export function ModalFooter({
   children,
   className,
 }: {

@@ -4,11 +4,11 @@ import { useState } from "react";
 import { Task } from "@/lib/types";
 import { format } from "date-fns";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalTitle,
+} from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
 import TaskCard from "@/components/tasks/task-card";
 import TaskFormModal from "@/components/tasks/task-form-modal";
@@ -64,20 +64,17 @@ export default function DayTasksModal({
 
   return (
     <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent
-          className="max-w-3xl max-h-[80vh] overflow-y-auto"
-          onClose={() => onOpenChange(false)}
-        >
-          <DialogHeader>
-            <div className="flex items-center justify-between">
-              <DialogTitle>{format(date, "EEEE, MMMM d, yyyy")}</DialogTitle>
-              <Button size="sm" onClick={handleNewTask}>
+      <Modal open={open} onOpenChange={onOpenChange}>
+        <ModalContent onClose={() => onOpenChange(false)}>
+          <ModalHeader>
+            <div className="flex items-center justify-between gap-10">
+              <ModalTitle>{format(date, "EEEE, MMMM d, yyyy")}</ModalTitle>
+              <Button variant="outline" size="sm" onClick={handleNewTask}>
                 <Plus className="h-4 w-4 mr-2" />
                 Add Task
               </Button>
             </div>
-          </DialogHeader>
+          </ModalHeader>
 
           <div className="space-y-6 py-4">
             {tasks.length === 0 ? (
@@ -116,8 +113,8 @@ export default function DayTasksModal({
               })
             )}
           </div>
-        </DialogContent>
-      </Dialog>
+        </ModalContent>
+      </Modal>
 
       <TaskFormModal
         open={showTaskModal}
