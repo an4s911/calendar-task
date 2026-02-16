@@ -30,23 +30,26 @@ export default function ActivityLogs() {
   const [entityTypeFilter, setEntityTypeFilter] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const fetchLogs = async () => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams({ page: String(page), limit: "50" });
-      if (entityTypeFilter) params.set("entityType", entityTypeFilter);
-      const res = await fetch(`/api/activity-logs?${params}`);
-      const data = await res.json();
-      setLogs(data.logs);
-      setTotalPages(data.pagination.totalPages);
-    } catch (error) {
-      console.error("Error fetching activity logs:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
+    const fetchLogs = async () => {
+      setLoading(true);
+      try {
+        const params = new URLSearchParams({
+          page: String(page),
+          limit: "50",
+        });
+        if (entityTypeFilter) params.set("entityType", entityTypeFilter);
+        const res = await fetch(`/api/activity-logs?${params}`);
+        const data = await res.json();
+        setLogs(data.logs);
+        setTotalPages(data.pagination.totalPages);
+      } catch (error) {
+        console.error("Error fetching activity logs:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchLogs();
   }, [page, entityTypeFilter]);
 
