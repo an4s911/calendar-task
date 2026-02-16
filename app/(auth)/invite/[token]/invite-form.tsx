@@ -104,7 +104,10 @@ export default function InviteForm({
           className="mt-1"
         />
         <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-          Lowercase letters, numbers, and underscores only
+          Lowercase letters, numbers, and underscores only.
+        </p>
+        <p className="text-xs text-amber-600 dark:text-amber-500 mt-1">
+          <strong>Username cannot be changed later.</strong>
         </p>
       </div>
 
