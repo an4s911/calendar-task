@@ -18,6 +18,20 @@ export async function proxy(req: NextRequest) {
     url.searchParams.set("from", pathname);
     return NextResponse.redirect(url);
   }
+
+  // For API routes, attach user info to headers for route handlers
+  if (pathname.startsWith("/api/")) {
+    const requestHeaders = new Headers(req.headers);
+    requestHeaders.set("x-user-id", session.sub);
+    requestHeaders.set("x-username", session.username);
+
+    return NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    });
+  }
+
   return NextResponse.next();
 }
 

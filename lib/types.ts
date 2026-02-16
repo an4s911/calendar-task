@@ -38,6 +38,73 @@ export interface Category {
   updatedAt?: Date | string;
 }
 
+export interface Role {
+  id: string;
+  name: string;
+  description?: string | null;
+  color: string;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+  _count?: { users: number };
+}
+
+export interface User {
+  id: string;
+  fullName: string;
+  username: string;
+  email?: string | null;
+  roleId?: string | null;
+  role?: Role | null;
+  timezone: string;
+  isAdmin: boolean;
+  isActive: boolean;
+  passwordChangedAt?: Date | string;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+  projectAssignments?: ProjectAssignment[];
+}
+
+export interface ProjectAssignment {
+  id: string;
+  projectId: string;
+  userId: string;
+  categoryAccessMode: "all" | "selected" | "all_except";
+  project?: Project;
+  user?: Pick<User, "id" | "fullName" | "username">;
+  categoryPermissions?: CategoryPermission[];
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
+}
+
+export interface CategoryPermission {
+  id: string;
+  projectAssignmentId: string;
+  categoryId: string;
+  canAccess: boolean;
+  category?: Category;
+}
+
+export interface TaskAssignment {
+  id: string;
+  taskId: string;
+  userId: string;
+  task?: Task;
+  user?: Pick<User, "id" | "fullName" | "username">;
+  createdAt?: Date | string;
+}
+
+export interface ActivityLog {
+  id: string;
+  userId: string;
+  action: string;
+  entityType: string;
+  entityId: string;
+  entityName?: string | null;
+  metadata?: Record<string, unknown> | null;
+  createdAt: Date | string;
+  user?: Pick<User, "id" | "fullName" | "username">;
+}
+
 export interface Settings {
   id: string;
   weekStartsOn: number;
