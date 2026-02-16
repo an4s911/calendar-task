@@ -25,7 +25,10 @@ export async function GET(
     });
 
     if (!category) {
-      return NextResponse.json({ error: "Category not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Category not found" },
+        { status: 404 },
+      );
     }
 
     return NextResponse.json(category);
@@ -55,14 +58,19 @@ export async function PATCH(
       where: { id },
       data: {
         name: body.name,
-        icon: body.icon,
         color: body.color,
         ...(body.projectId !== undefined && { projectId: body.projectId }),
         ...(body.order !== undefined && { order: body.order }),
       },
     });
 
-    await logActivity(userId, "updated", "category", category.id, category.name);
+    await logActivity(
+      userId,
+      "updated",
+      "category",
+      category.id,
+      category.name,
+    );
 
     return NextResponse.json(category);
   } catch (error) {
@@ -88,12 +96,21 @@ export async function DELETE(
 
     const category = await prisma.category.findUnique({ where: { id } });
     if (!category) {
-      return NextResponse.json({ error: "Category not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Category not found" },
+        { status: 404 },
+      );
     }
 
     await prisma.category.delete({ where: { id } });
 
-    await logActivity(userId, "deleted", "category", category.id, category.name);
+    await logActivity(
+      userId,
+      "deleted",
+      "category",
+      category.id,
+      category.name,
+    );
 
     return NextResponse.json({ message: "Category deleted successfully" });
   } catch (error) {

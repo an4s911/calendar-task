@@ -22,7 +22,6 @@ export default function CategoryManager() {
   const [showModal, setShowModal] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [name, setName] = useState("");
-  const [icon, setIcon] = useState("");
   const [color, setColor] = useState("#3b82f6");
   const [projectId, setProjectId] = useState<string>("");
   const [deletingCategory, setDeletingCategory] = useState<Category | null>(
@@ -32,7 +31,6 @@ export default function CategoryManager() {
 
   const resetForm = () => {
     setName("");
-    setIcon("");
     setColor("#3b82f6");
     setProjectId(projects.length > 0 ? projects[0].id : "");
     setEditingCategory(null);
@@ -42,7 +40,6 @@ export default function CategoryManager() {
     if (category) {
       setEditingCategory(category);
       setName(category.name);
-      setIcon(category.icon);
       setColor(category.color);
       setProjectId(category.projectId || "");
     } else {
@@ -65,7 +62,7 @@ export default function CategoryManager() {
         const response = await fetch(`/api/categories/${editingCategory.id}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name, icon, color, projectId }),
+          body: JSON.stringify({ name, color, projectId }),
         });
 
         if (response.ok) {
@@ -79,7 +76,6 @@ export default function CategoryManager() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             name,
-            icon,
             color,
             projectId,
             order: categories.length,
@@ -129,7 +125,6 @@ export default function CategoryManager() {
         className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800"
       >
         <div className="flex items-center space-x-3 flex-1">
-          <span className="text-2xl">{category.icon}</span>
           <div className="flex-1">
             <div className="flex items-center gap-2">
               <div className="font-medium text-gray-900 dark:text-white">
@@ -239,21 +234,6 @@ export default function CategoryManager() {
                 placeholder="e.g., Work"
                 required
               />
-            </div>
-
-            <div>
-              <Label htmlFor="icon">Icon (Emoji) *</Label>
-              <Input
-                id="icon"
-                value={icon}
-                onChange={(e) => setIcon(e.target.value)}
-                placeholder="e.g., 💼"
-                maxLength={2}
-                required
-              />
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                Use any emoji or symbol
-              </p>
             </div>
 
             <div>

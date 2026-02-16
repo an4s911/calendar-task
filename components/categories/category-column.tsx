@@ -34,7 +34,6 @@ export default function CategoryColumn({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             name: editName,
-            icon: category.icon,
             color: category.color,
           }),
         });
@@ -85,7 +84,6 @@ export default function CategoryColumn({
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2 flex-1">
-            <span className="text-2xl">{category.icon}</span>
             {isEditing ? (
               <div className="flex items-center space-x-1 flex-1">
                 <Input
