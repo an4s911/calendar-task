@@ -75,7 +75,8 @@ model User {
   fullName           String
   username           String              @unique
   email              String?             @unique
-  passwordHash       String
+  passwordHash       String?
+  inviteToken        String?   @unique
   roleId             String?
   role               Role?               @relation(fields: [roleId], references: [id], onDelete: SetNull)
   timezone           String              @default("UTC")

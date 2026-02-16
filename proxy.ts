@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionFromRequest } from "@/lib/auth";
 
-const PUBLIC = ["/login", "/setup", "/api/auth"];
+const PUBLIC = ["/login", "/setup", "/api/auth", "/invite"];
 
 export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;

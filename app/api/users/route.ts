@@ -2,20 +2,22 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin, getUserIdFromRequest } from "@/lib/api-helpers";
 import { logActivity } from "@/lib/permissions";
-import bcrypt from "bcryptjs";
+import crypto from "crypto";
 
 export async function GET(request: NextRequest) {
   const adminCheck = await requireAdmin(request);
   if (adminCheck) return adminCheck;
 
   const users = await prisma.user.findMany({
-    where: { isActive: true },
     include: { role: true },
     orderBy: { createdAt: "desc" },
   });
 
-  // Strip password hashes
-  const safeUsers = users.map(({ passwordHash, ...user }) => user);
+  // Strip sensitive fields, add derived status
+  const safeUsers = users.map(({ passwordHash, inviteToken, ...user }) => ({
+    ...user,
+    status: user.isActive ? "active" : inviteToken ? "pending" : "deactivated",
+  }));
 
   return NextResponse.json(safeUsers);
 }
@@ -27,45 +29,21 @@ export async function POST(request: NextRequest) {
   const userId = getUserIdFromRequest(request)!;
   const body = await request.json();
 
-  if (!body.fullName || !body.username || !body.password) {
-    return NextResponse.json(
-      { error: "Full name, username, and password are required" },
-      { status: 400 }
-    );
-  }
-
-  if (!/^[a-z0-9_]{3,30}$/.test(body.username)) {
-    return NextResponse.json(
-      {
-        error:
-          "Username must be 3-30 characters, lowercase letters, numbers, or underscores",
-      },
-      { status: 400 }
-    );
-  }
-
-  // Check for duplicate username
-  const existing = await prisma.user.findUnique({
-    where: { username: body.username },
-  });
-  if (existing) {
-    return NextResponse.json(
-      { error: "Username already taken" },
-      { status: 409 }
-    );
-  }
-
-  const passwordHash = await bcrypt.hash(body.password, 12);
+  // Generate a unique invite token and placeholder username
+  const inviteToken = crypto.randomBytes(24).toString("hex");
+  const placeholderUsername = `pending_${crypto.randomBytes(4).toString("hex")}`;
 
   const user = await prisma.user.create({
     data: {
-      fullName: body.fullName,
-      username: body.username,
+      fullName: body.fullName || "Pending User",
+      username: placeholderUsername,
       email: body.email || null,
-      passwordHash,
+      passwordHash: null,
+      inviteToken,
       roleId: body.roleId || null,
       timezone: body.timezone || "UTC",
       isAdmin: body.isAdmin || false,
+      isActive: false,
     },
     include: { role: true },
   });
@@ -73,5 +51,6 @@ export async function POST(request: NextRequest) {
   await logActivity(userId, "created", "user", user.id, user.fullName);
 
   const { passwordHash: _, ...safeUser } = user;
+  // Return invite token in creation response only (one-time visibility)
   return NextResponse.json(safeUser, { status: 201 });
 }

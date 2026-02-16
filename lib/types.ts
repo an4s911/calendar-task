@@ -52,11 +52,13 @@ export interface User {
   fullName: string;
   username: string;
   email?: string | null;
+  inviteToken?: string | null;
   roleId?: string | null;
   role?: Role | null;
   timezone: string;
   isAdmin: boolean;
   isActive: boolean;
+  status?: "active" | "pending" | "deactivated";
   passwordChangedAt?: Date | string;
   createdAt?: Date | string;
   updatedAt?: Date | string;

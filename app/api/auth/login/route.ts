@@ -23,6 +23,10 @@ export async function POST(req: Request) {
     );
   }
 
+  if (!user.passwordHash) {
+    return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
+  }
+
   const valid = await bcrypt.compare(password, user.passwordHash);
   if (!valid) {
     return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });

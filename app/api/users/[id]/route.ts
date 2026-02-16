@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin, getUserIdFromRequest } from "@/lib/api-helpers";
 import { logActivity } from "@/lib/permissions";
-import bcrypt from "bcryptjs";
 
 export async function GET(
   request: NextRequest,
@@ -29,7 +28,7 @@ export async function GET(
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
 
-  const { passwordHash, ...safeUser } = user;
+  const { passwordHash, inviteToken, ...safeUser } = user;
   return NextResponse.json(safeUser);
 }
 
@@ -51,9 +50,6 @@ export async function PUT(
   if (body.timezone !== undefined) updateData.timezone = body.timezone;
   if (body.isAdmin !== undefined) updateData.isAdmin = body.isAdmin;
   if (body.isActive !== undefined) updateData.isActive = body.isActive;
-  if (body.password) {
-    updateData.passwordHash = await bcrypt.hash(body.password, 12);
-  }
 
   const user = await prisma.user.update({
     where: { id },
@@ -63,7 +59,7 @@ export async function PUT(
 
   await logActivity(currentUserId, "updated", "user", user.id, user.fullName);
 
-  const { passwordHash, ...safeUser } = user;
+  const { passwordHash, inviteToken, ...safeUser } = user;
   return NextResponse.json(safeUser);
 }
 
@@ -90,11 +86,16 @@ export async function DELETE(
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
 
-  // Soft delete
-  await prisma.user.update({
-    where: { id },
-    data: { isActive: false },
-  });
+  if (!user.isActive) {
+    // Pending user (never activated) — hard delete
+    await prisma.user.delete({ where: { id } });
+  } else {
+    // Active user — soft delete
+    await prisma.user.update({
+      where: { id },
+      data: { isActive: false },
+    });
+  }
 
   await logActivity(
     currentUserId,
