@@ -12,7 +12,16 @@ import {
   ModalFooter,
 } from "@/components/ui/modal";
 import { ConfirmDialog, AlertDialog } from "@/components/ui/confirm-dialog";
-import { Plus, Pencil, Trash2, Shield, ShieldOff } from "lucide-react";
+import {
+  Plus,
+  Pencil,
+  Trash2,
+  Shield,
+  ShieldOff,
+  Copy,
+  Check,
+  RotateCcw,
+} from "lucide-react";
 import { User, Role } from "@/lib/types";
 
 interface UserManagementProps {
@@ -26,12 +35,14 @@ export default function UserManagement({
   roles,
   onRefresh,
 }: UserManagementProps) {
-  const [showModal, setShowModal] = useState(false);
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showLinkModal, setShowLinkModal] = useState(false);
+  const [inviteLink, setInviteLink] = useState("");
+  const [copied, setCopied] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [fullName, setFullName] = useState("");
-  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [roleId, setRoleId] = useState("");
   const [timezone, setTimezone] = useState("UTC");
   const [isAdmin, setIsAdmin] = useState(false);
@@ -40,88 +51,100 @@ export default function UserManagement({
 
   const resetForm = () => {
     setFullName("");
-    setUsername("");
     setEmail("");
-    setPassword("");
     setRoleId("");
     setTimezone("UTC");
     setIsAdmin(false);
     setEditingUser(null);
   };
 
-  const handleOpenModal = (user?: User) => {
-    if (user) {
-      setEditingUser(user);
-      setFullName(user.fullName);
-      setUsername(user.username);
-      setEmail(user.email ?? "");
-      setPassword("");
-      setRoleId(user.roleId ?? "");
-      setTimezone(user.timezone);
-      setIsAdmin(user.isAdmin);
-    } else {
-      resetForm();
-    }
-    setShowModal(true);
+  const handleOpenInviteModal = () => {
+    resetForm();
+    setShowInviteModal(true);
   };
 
-  const handleSubmit = async (e: SubmitEvent) => {
+  const handleOpenEditModal = (user: User) => {
+    setEditingUser(user);
+    setFullName(user.fullName);
+    setEmail(user.email ?? "");
+    setRoleId(user.roleId ?? "");
+    setTimezone(user.timezone);
+    setIsAdmin(user.isAdmin);
+    setShowEditModal(true);
+  };
+
+  const handleInviteSubmit = async (e: SubmitEvent) => {
     e.preventDefault();
 
     try {
-      if (editingUser) {
-        const body: Record<string, unknown> = {
-          fullName,
-          username,
+      const response = await fetch("/api/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fullName: fullName || undefined,
           email: email || null,
           roleId: roleId || null,
           timezone,
           isAdmin,
-        };
-        if (password) {
-          body.password = password;
-        }
+        }),
+      });
 
-        const response = await fetch(`/api/users/${editingUser.id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        });
-
-        if (!response.ok) {
-          const data = await response.json();
-          setAlertMessage(data.error ?? "Failed to update user");
-          return;
-        }
-      } else {
-        const response = await fetch("/api/users", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            fullName,
-            username,
-            email: email || null,
-            password,
-            roleId: roleId || null,
-            timezone,
-            isAdmin,
-          }),
-        });
-
-        if (!response.ok) {
-          const data = await response.json();
-          setAlertMessage(data.error ?? "Failed to create user");
-          return;
-        }
+      if (!response.ok) {
+        const data = await response.json();
+        setAlertMessage(data.error ?? "Failed to invite user");
+        return;
       }
 
-      setShowModal(false);
+      const data = await response.json();
+      const link = `${window.location.origin}/invite/${data.inviteToken}`;
+      setInviteLink(link);
+      setCopied(false);
+      setShowInviteModal(false);
+      setShowLinkModal(true);
       resetForm();
       onRefresh();
     } catch (error) {
-      console.error("Error saving user:", error);
-      setAlertMessage("Failed to save user");
+      console.error("Error inviting user:", error);
+      setAlertMessage("Failed to invite user");
     }
+  };
+
+  const handleEditSubmit = async (e: SubmitEvent) => {
+    e.preventDefault();
+    if (!editingUser) return;
+
+    try {
+      const response = await fetch(`/api/users/${editingUser.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fullName,
+          email: email || null,
+          roleId: roleId || null,
+          timezone,
+          isAdmin,
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        setAlertMessage(data.error ?? "Failed to update user");
+        return;
+      }
+
+      setShowEditModal(false);
+      resetForm();
+      onRefresh();
+    } catch (error) {
+      console.error("Error updating user:", error);
+      setAlertMessage("Failed to update user");
+    }
+  };
+
+  const handleCopyLink = async () => {
+    await navigator.clipboard.writeText(inviteLink);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   const handleDeleteClick = (user: User) => {
@@ -149,6 +172,27 @@ export default function UserManagement({
     }
   };
 
+  const handleReactivate = async (user: User) => {
+    try {
+      const response = await fetch(`/api/users/${user.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isActive: true }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        setAlertMessage(data.error ?? "Failed to reactivate user");
+        return;
+      }
+
+      onRefresh();
+    } catch (error) {
+      console.error("Error reactivating user:", error);
+      setAlertMessage("Failed to reactivate user");
+    }
+  };
+
   const UserRow = ({ user }: { user: User }) => {
     const role = roles.find((r) => r.id === user.roleId);
 
@@ -158,7 +202,7 @@ export default function UserManagement({
           {user.fullName}
         </td>
         <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
-          {user.username}
+          {user.status === "pending" ? "-" : user.username}
         </td>
         <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
           {user.email ?? "-"}
@@ -176,6 +220,21 @@ export default function UserManagement({
           )}
         </td>
         <td className="px-4 py-3">
+          {user.status === "active" ? (
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+              Active
+            </span>
+          ) : user.status === "pending" ? (
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+              Pending
+            </span>
+          ) : (
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
+              Deactivated
+            </span>
+          )}
+        </td>
+        <td className="px-4 py-3">
           {user.isAdmin ? (
             <Shield className="h-4 w-4 text-green-500" />
           ) : (
@@ -184,13 +243,25 @@ export default function UserManagement({
         </td>
         <td className="px-4 py-3">
           <div className="flex space-x-1">
-            <Button
-              size="icon"
-              variant="ghost"
-              onClick={() => handleOpenModal(user)}
-            >
-              <Pencil className="h-4 w-4" />
-            </Button>
+            {user.status === "deactivated" && (
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={() => handleReactivate(user)}
+                title="Reactivate user"
+              >
+                <RotateCcw className="h-4 w-4" />
+              </Button>
+            )}
+            {user.status !== "deactivated" && (
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={() => handleOpenEditModal(user)}
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
+            )}
             <Button
               size="icon"
               variant="ghost"
@@ -210,9 +281,9 @@ export default function UserManagement({
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
           Users
         </h3>
-        <Button size="sm" onClick={() => handleOpenModal()}>
+        <Button size="sm" onClick={handleOpenInviteModal}>
           <Plus className="h-4 w-4 mr-2" />
-          Add User
+          Invite User
         </Button>
       </div>
 
@@ -222,7 +293,7 @@ export default function UserManagement({
             No users found
           </p>
           <p className="text-xs text-gray-400 dark:text-gray-500">
-            Create a user to get started
+            Invite a user to get started
           </p>
         </div>
       ) : (
@@ -244,6 +315,9 @@ export default function UserManagement({
                     Role
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Admin
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
@@ -261,61 +335,41 @@ export default function UserManagement({
         </div>
       )}
 
-      <Modal open={showModal} onOpenChange={setShowModal}>
-        <ModalContent onClose={() => setShowModal(false)}>
+      {/* Invite User Modal */}
+      <Modal open={showInviteModal} onOpenChange={setShowInviteModal}>
+        <ModalContent onClose={() => setShowInviteModal(false)}>
           <ModalHeader>
-            <ModalTitle>
-              {editingUser ? "Edit User" : "Add New User"}
-            </ModalTitle>
+            <ModalTitle>Invite User</ModalTitle>
           </ModalHeader>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleInviteSubmit} className="space-y-4">
+            <div className="bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 px-4 py-3 rounded-lg text-sm">
+              An invite link will be generated. The user will set their own
+              username and password when they accept the invitation.
+            </div>
+
             <div>
-              <Label htmlFor="fullName">Full Name *</Label>
+              <Label htmlFor="fullName">
+                Full Name <span className="text-gray-400">(optional)</span>
+              </Label>
               <Input
                 id="fullName"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 placeholder="e.g., John Doe"
-                required
               />
             </div>
 
             <div>
-              <Label htmlFor="username">Username *</Label>
-              <Input
-                id="username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="e.g., johndoe"
-                required
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">
+                Email <span className="text-gray-400">(optional)</span>
+              </Label>
               <Input
                 id="email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="e.g., john@example.com"
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="password">
-                Password {editingUser ? "(leave blank to keep current)" : "*"}
-              </Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder={
-                  editingUser ? "Leave blank to keep current" : "Enter password"
-                }
-                required={!editingUser}
               />
             </div>
 
@@ -361,13 +415,129 @@ export default function UserManagement({
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => setShowModal(false)}
+                onClick={() => setShowInviteModal(false)}
               >
                 Cancel
               </Button>
-              <Button type="submit">
-                {editingUser ? "Update" : "Create"}
+              <Button type="submit">Generate Invite Link</Button>
+            </ModalFooter>
+          </form>
+        </ModalContent>
+      </Modal>
+
+      {/* Invite Link Modal (shown once after creation) */}
+      <Modal open={showLinkModal} onOpenChange={setShowLinkModal}>
+        <ModalContent onClose={() => setShowLinkModal(false)}>
+          <ModalHeader>
+            <ModalTitle>Invite Link Generated</ModalTitle>
+          </ModalHeader>
+
+          <div className="space-y-4">
+            <div className="bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 px-4 py-3 rounded-lg text-sm">
+              This link will only be shown once. Copy it now and share it with
+              the user.
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Input value={inviteLink} readOnly className="font-mono text-sm" />
+              <Button
+                type="button"
+                size="icon"
+                variant="outline"
+                onClick={handleCopyLink}
+              >
+                {copied ? (
+                  <Check className="h-4 w-4 text-green-500" />
+                ) : (
+                  <Copy className="h-4 w-4" />
+                )}
               </Button>
+            </div>
+
+            <ModalFooter>
+              <Button onClick={() => setShowLinkModal(false)}>Done</Button>
+            </ModalFooter>
+          </div>
+        </ModalContent>
+      </Modal>
+
+      {/* Edit User Modal */}
+      <Modal open={showEditModal} onOpenChange={setShowEditModal}>
+        <ModalContent onClose={() => setShowEditModal(false)}>
+          <ModalHeader>
+            <ModalTitle>Edit User</ModalTitle>
+          </ModalHeader>
+
+          <form onSubmit={handleEditSubmit} className="space-y-4">
+            <div>
+              <Label htmlFor="editFullName">Full Name</Label>
+              <Input
+                id="editFullName"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                placeholder="e.g., John Doe"
+                required
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="editEmail">Email</Label>
+              <Input
+                id="editEmail"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="e.g., john@example.com"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="editRoleId">Role</Label>
+              <select
+                id="editRoleId"
+                value={roleId}
+                onChange={(e) => setRoleId(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              >
+                <option value="">No role</option>
+                {roles.map((role) => (
+                  <option key={role.id} value={role.id}>
+                    {role.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <Label htmlFor="editTimezone">Timezone</Label>
+              <Input
+                id="editTimezone"
+                value={timezone}
+                onChange={(e) => setTimezone(e.target.value)}
+                placeholder="e.g., UTC"
+              />
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <input
+                id="editIsAdmin"
+                type="checkbox"
+                checked={isAdmin}
+                onChange={(e) => setIsAdmin(e.target.checked)}
+                className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500"
+              />
+              <Label htmlFor="editIsAdmin">Admin privileges</Label>
+            </div>
+
+            <ModalFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowEditModal(false)}
+              >
+                Cancel
+              </Button>
+              <Button type="submit">Update</Button>
             </ModalFooter>
           </form>
         </ModalContent>
