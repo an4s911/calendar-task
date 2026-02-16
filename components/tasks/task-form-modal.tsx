@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, SubmitEvent } from "react";
+import { useState, useEffect, useRef, SubmitEvent } from "react";
 import { useStore } from "@/lib/store";
 import { Task, TaskStatus, TaskPriority } from "@/lib/types";
 import {
@@ -17,6 +17,12 @@ import { Label } from "@/components/ui/label";
 import { Select } from "@/components/ui/select";
 import { ConfirmDialog, AlertDialog } from "@/components/ui/confirm-dialog";
 import { Trash2 } from "lucide-react";
+
+interface SimpleUser {
+  id: string;
+  fullName: string;
+  username: string;
+}
 
 interface TaskFormModalProps {
   open: boolean;
@@ -48,6 +54,43 @@ export default function TaskFormModal({
   const [categoryId, setCategoryId] = useState("");
   const [show, setShow] = useState(true);
 
+  // User assignment state (admin only)
+  const [users, setUsers] = useState<SimpleUser[]>([]);
+  const [assignedUserIds, setAssignedUserIds] = useState<string[]>([]);
+  const originalAssignedIds = useRef<string[]>([]);
+  const isAdmin = users.length > 0;
+
+  // Fetch users list (admin only — endpoint returns 403 for non-admins)
+  useEffect(() => {
+    if (!open) return;
+    fetch("/api/users")
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data: SimpleUser[]) => setUsers(data))
+      .catch(() => setUsers([]));
+  }, [open]);
+
+  // Fetch existing assignments when editing a task
+  useEffect(() => {
+    if (!open || !task || !isAdmin) return;
+    fetch(`/api/assignments/task?taskId=${task.id}`)
+      .then((res) => (res.ok ? res.json() : []))
+      .then(
+        (
+          assignments: Array<{
+            userId: string;
+          }>,
+        ) => {
+          const ids = assignments.map((a) => a.userId);
+          setAssignedUserIds(ids);
+          originalAssignedIds.current = ids;
+        },
+      )
+      .catch(() => {
+        setAssignedUserIds([]);
+        originalAssignedIds.current = [];
+      });
+  }, [open, task, isAdmin]);
+
   // Initialize form with task data or defaults
   useEffect(() => {
     if (task) {
@@ -77,6 +120,8 @@ export default function TaskFormModal({
       setPriority("medium");
       setCategoryId(categories[0]?.id || "");
       setShow(true);
+      setAssignedUserIds([]);
+      originalAssignedIds.current = [];
     }
   }, [task, defaultDate, categories, open]);
 
@@ -97,6 +142,8 @@ export default function TaskFormModal({
         show,
       };
 
+      let savedTaskId: string | null = null;
+
       if (task) {
         // Update existing task
         const response = await fetch(`/api/tasks/${task.id}`, {
@@ -108,6 +155,7 @@ export default function TaskFormModal({
         if (response.ok) {
           const updatedTask = await response.json();
           updateTask(task.id, updatedTask);
+          savedTaskId = task.id;
         }
       } else {
         // Create new task
@@ -120,7 +168,34 @@ export default function TaskFormModal({
         if (response.ok) {
           const newTask = await response.json();
           addTask(newTask);
+          savedTaskId = newTask.id;
         }
+      }
+
+      // Sync user assignments (admin only)
+      if (savedTaskId && isAdmin) {
+        const toAdd = assignedUserIds.filter(
+          (id) => !originalAssignedIds.current.includes(id),
+        );
+        const toRemove = originalAssignedIds.current.filter(
+          (id) => !assignedUserIds.includes(id),
+        );
+
+        await Promise.all([
+          ...toAdd.map((userId) =>
+            fetch("/api/assignments/task", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ taskId: savedTaskId, userId }),
+            }),
+          ),
+          ...toRemove.map((userId) =>
+            fetch(
+              `/api/assignments/task?taskId=${savedTaskId}&userId=${userId}`,
+              { method: "DELETE" },
+            ),
+          ),
+        ]);
       }
 
       onOpenChange(false);
@@ -191,6 +266,42 @@ export default function TaskFormModal({
                 ))}
               </Select>
             </div>
+
+            {/* Assign Users (admin only) */}
+            {isAdmin && users.length > 0 && (
+              <div>
+                <Label>Assign Users</Label>
+                <div className="mt-1 max-h-32 overflow-y-auto border border-gray-300 dark:border-gray-600 rounded-lg p-2 space-y-1">
+                  {users.map((user) => (
+                    <label
+                      key={user.id}
+                      className="flex items-center space-x-2 px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={assignedUserIds.includes(user.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setAssignedUserIds((prev) => [...prev, user.id]);
+                          } else {
+                            setAssignedUserIds((prev) =>
+                              prev.filter((id) => id !== user.id),
+                            );
+                          }
+                        }}
+                        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      />
+                      <span className="text-sm text-gray-900 dark:text-white">
+                        {user.fullName}{" "}
+                        <span className="text-gray-500 dark:text-gray-400">
+                          @{user.username}
+                        </span>
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Notes/Description */}
             <div>
