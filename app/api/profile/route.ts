@@ -50,6 +50,13 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
+    if (!user.passwordHash) {
+      return NextResponse.json(
+        { error: "Password not set for this user" },
+        { status: 400 }
+      );
+    }
+
     const valid = await bcrypt.compare(body.currentPassword, user.passwordHash);
     if (!valid) {
       return NextResponse.json(
