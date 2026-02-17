@@ -13,7 +13,6 @@ import {
   addMonths,
   subMonths,
   isSameMonth,
-  isSameDay,
   isToday,
 } from "date-fns";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -70,11 +69,13 @@ export default function MonthView() {
 
   const getTasksForDay = (date: Date) => {
     return tasks.filter((task) => {
-      if (!task.startDate) return false;
-      const taskStart = new Date(task.startDate);
-      const taskEnd = task.endDate ? new Date(task.endDate) : taskStart;
+      if (!task.startDate || !task.show) return false;
+      const taskStartRaw = new Date(task.startDate);
+      const taskStart = new Date(taskStartRaw.getFullYear(), taskStartRaw.getMonth(), taskStartRaw.getDate());
+      const taskEndRaw = task.endDate ? new Date(task.endDate) : taskStart;
+      const taskEnd = task.endDate ? new Date(taskEndRaw.getFullYear(), taskEndRaw.getMonth(), taskEndRaw.getDate()) : taskStart;
       // Show task if the day is within the task's date range
-      if (date < taskStart || date > taskEnd || !task.show) return false;
+      if (date < taskStart || date > taskEnd) return false;
 
       // Apply category filter
       if (categoryFilter === "all") return true;

@@ -12,7 +12,7 @@ export default function CategoriesBoard() {
   const [showTaskModal, setShowTaskModal] = useState(false);
 
   const getTasksByCategory = (categoryId: string) => {
-    return tasks.filter((task) => task.categoryId === categoryId && task.show);
+    return tasks.filter((task) => task.categoryId === categoryId);
   };
 
   const handleTaskClick = (task: Task) => {

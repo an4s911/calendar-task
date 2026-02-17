@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useStore } from "@/lib/store";
 import { Task } from "@/lib/types";
-import { format, isSameDay } from "date-fns";
+import { format } from "date-fns";
 import {
   Modal,
   ModalContent,
@@ -35,10 +35,13 @@ export default function DayTasksModal({
   const tasks = date
     ? allTasks.filter((task) => {
         if (!task.startDate || !task.show) return false;
-        const taskStart = new Date(task.startDate);
-        const taskEnd = task.endDate ? new Date(task.endDate) : taskStart;
+        const taskStartRaw = new Date(task.startDate);
+        const taskStart = new Date(taskStartRaw.getFullYear(), taskStartRaw.getMonth(), taskStartRaw.getDate());
+        const taskEndRaw = task.endDate ? new Date(task.endDate) : taskStart;
+        const taskEnd = task.endDate ? new Date(taskEndRaw.getFullYear(), taskEndRaw.getMonth(), taskEndRaw.getDate()) : taskStart;
         // Show task if the selected date is within the task's date range
-        return date >= taskStart && date <= taskEnd;
+        const normalizedDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+        return normalizedDate >= taskStart && normalizedDate <= taskEnd;
       })
     : [];
 

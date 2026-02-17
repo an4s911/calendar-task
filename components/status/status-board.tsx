@@ -19,7 +19,7 @@ export default function StatusBoard() {
   const [showTaskModal, setShowTaskModal] = useState(false);
 
   const getTasksByStatus = (status: TaskStatus) => {
-    return tasks.filter((task) => task.status === status && task.show);
+    return tasks.filter((task) => task.status === status);
   };
 
   const handleTaskClick = (task: Task) => {
