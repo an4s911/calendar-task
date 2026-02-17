@@ -2,7 +2,8 @@ export interface Task {
   id: string;
   title: string;
   description?: string | null;
-  date?: Date | string | null;
+  startDate?: Date | string | null;
+  endDate?: Date | string | null;
   startTime?: string | null;
   endTime?: string | null;
   status: "not-started" | "waiting" | "in-progress" | "completed";

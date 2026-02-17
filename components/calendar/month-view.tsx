@@ -70,9 +70,11 @@ export default function MonthView() {
 
   const getTasksForDay = (date: Date) => {
     return tasks.filter((task) => {
-      if (!task.date) return false;
-      const taskDate = new Date(task.date);
-      if (!isSameDay(taskDate, date) || !task.show) return false;
+      if (!task.startDate) return false;
+      const taskStart = new Date(task.startDate);
+      const taskEnd = task.endDate ? new Date(task.endDate) : taskStart;
+      // Show task if the day is within the task's date range
+      if (date < taskStart || date > taskEnd || !task.show) return false;
 
       // Apply category filter
       if (categoryFilter === "all") return true;

@@ -46,7 +46,8 @@ export default function TaskFormModal({
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [notes, setNotes] = useState("");
-  const [date, setDate] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
   const [status, setStatus] = useState<TaskStatus>("not-started");
@@ -97,7 +98,14 @@ export default function TaskFormModal({
       setTitle(task.title);
       setDescription(task.description || "");
       setNotes(task.description || ""); // Using description as notes for now
-      setDate(task.date ? new Date(task.date).toISOString().split("T")[0] : "");
+      setStartDate(
+        task.startDate
+          ? new Date(task.startDate).toISOString().split("T")[0]
+          : "",
+      );
+      setEndDate(
+        task.endDate ? new Date(task.endDate).toISOString().split("T")[0] : "",
+      );
       setStartTime(task.startTime || "");
       setEndTime(task.endTime || "");
       setStatus(task.status);
@@ -109,11 +117,12 @@ export default function TaskFormModal({
       setTitle("");
       setDescription("");
       setNotes("");
-      setDate(
+      setStartDate(
         defaultDate
           ? `${defaultDate.getFullYear()}-${String(defaultDate.getMonth() + 1).padStart(2, "0")}-${String(defaultDate.getDate()).padStart(2, "0")}`
           : "",
       );
+      setEndDate("");
       setStartTime("");
       setEndTime("");
       setStatus("not-started");
@@ -133,7 +142,8 @@ export default function TaskFormModal({
       const taskData = {
         title,
         description: notes, // Using notes as description
-        date: date ? new Date(date).toISOString() : null,
+        startDate: startDate ? new Date(startDate).toISOString() : null,
+        endDate: endDate ? new Date(endDate).toISOString() : null,
         startTime: startTime || null,
         endTime: endTime || null,
         status,
@@ -315,15 +325,26 @@ export default function TaskFormModal({
               />
             </div>
 
-            {/* Date */}
-            <div>
-              <Label htmlFor="date">Date</Label>
-              <Input
-                id="date"
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-              />
+            {/* Date Range */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="startDate">Start Date</Label>
+                <Input
+                  id="startDate"
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="endDate">End Date</Label>
+                <Input
+                  id="endDate"
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                />
+              </div>
             </div>
 
             {/* Time Range */}

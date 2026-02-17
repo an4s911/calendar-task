@@ -62,8 +62,10 @@ export async function PATCH(
     if (body.title !== undefined) updateData.title = body.title;
     if (body.description !== undefined)
       updateData.description = body.description;
-    if (body.date !== undefined)
-      updateData.date = body.date ? new Date(body.date) : null;
+    if (body.startDate !== undefined)
+      updateData.startDate = body.startDate ? new Date(body.startDate) : null;
+    if (body.endDate !== undefined)
+      updateData.endDate = body.endDate ? new Date(body.endDate) : null;
     if (body.startTime !== undefined) updateData.startTime = body.startTime;
     if (body.endTime !== undefined) updateData.endTime = body.endTime;
     if (body.status !== undefined) {

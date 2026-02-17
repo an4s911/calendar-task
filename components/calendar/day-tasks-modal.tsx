@@ -34,8 +34,11 @@ export default function DayTasksModal({
 
   const tasks = date
     ? allTasks.filter((task) => {
-        if (!task.date || !task.show) return false;
-        return isSameDay(new Date(task.date), date);
+        if (!task.startDate || !task.show) return false;
+        const taskStart = new Date(task.startDate);
+        const taskEnd = task.endDate ? new Date(task.endDate) : taskStart;
+        // Show task if the selected date is within the task's date range
+        return date >= taskStart && date <= taskEnd;
       })
     : [];
 

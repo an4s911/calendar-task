@@ -54,7 +54,8 @@ model Task {
   id          String           @id @default(uuid())
   title       String
   description String?
-  date        DateTime?
+  startDate   DateTime?
+  endDate     DateTime?
   startTime   String?
   endTime     String?
   status      String           @default("not-started") // not-started, waiting, in-progress, completed

@@ -39,7 +39,8 @@ export async function POST(request: NextRequest) {
       data: {
         title: body.title,
         description: body.description,
-        date: body.date ? new Date(body.date) : null,
+        startDate: body.startDate ? new Date(body.startDate) : null,
+        endDate: body.endDate ? new Date(body.endDate) : null,
         startTime: body.startTime,
         endTime: body.endTime,
         status: body.status || "not-started",
