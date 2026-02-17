@@ -215,13 +215,27 @@ export default function TaskModal({
             )}
 
             {/* Date & Time */}
-            {(currentTask.date || currentTask.startTime) && (
+            {(currentTask.startDate || currentTask.startTime) && (
               <div className="flex flex-wrap gap-4 text-sm text-gray-600 dark:text-gray-400">
-                {currentTask.date && (
+                {currentTask.startDate && (
                   <div className="flex items-center space-x-2">
                     <Calendar className="h-4 w-4" />
                     <span>
-                      {format(new Date(currentTask.date), "EEEE, MMMM d, yyyy")}
+                      {format(
+                        new Date(currentTask.startDate),
+                        "EEEE, MMMM d, yyyy",
+                      )}
+                      {currentTask.endDate &&
+                        new Date(currentTask.endDate).getTime() !==
+                          new Date(currentTask.startDate).getTime() && (
+                          <>
+                            {" - "}
+                            {format(
+                              new Date(currentTask.endDate),
+                              "EEEE, MMMM d, yyyy",
+                            )}
+                          </>
+                        )}
                     </span>
                   </div>
                 )}
