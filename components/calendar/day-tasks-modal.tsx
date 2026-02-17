@@ -27,7 +27,7 @@ export default function DayTasksModal({
   onOpenChange,
   date,
 }: DayTasksModalProps) {
-  const { tasks: allTasks } = useStore();
+  const { tasks: allTasks, categories, assignedToMeFilter, currentUserId, categoryFilter } = useStore();
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [showTaskModal, setShowTaskModal] = useState(false);
   const [showNewTaskModal, setShowNewTaskModal] = useState(false);
@@ -36,12 +36,41 @@ export default function DayTasksModal({
     ? allTasks.filter((task) => {
         if (!task.startDate || !task.show) return false;
         const taskStartRaw = new Date(task.startDate);
-        const taskStart = new Date(taskStartRaw.getFullYear(), taskStartRaw.getMonth(), taskStartRaw.getDate());
+        const taskStart = new Date(
+          taskStartRaw.getFullYear(),
+          taskStartRaw.getMonth(),
+          taskStartRaw.getDate(),
+        );
         const taskEndRaw = task.endDate ? new Date(task.endDate) : taskStart;
-        const taskEnd = task.endDate ? new Date(taskEndRaw.getFullYear(), taskEndRaw.getMonth(), taskEndRaw.getDate()) : taskStart;
+        const taskEnd = task.endDate
+          ? new Date(
+              taskEndRaw.getFullYear(),
+              taskEndRaw.getMonth(),
+              taskEndRaw.getDate(),
+            )
+          : taskStart;
         // Show task if the selected date is within the task's date range
-        const normalizedDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-        return normalizedDate >= taskStart && normalizedDate <= taskEnd;
+        const normalizedDate = new Date(
+          date.getFullYear(),
+          date.getMonth(),
+          date.getDate(),
+        );
+        if (normalizedDate < taskStart || normalizedDate > taskEnd)
+          return false;
+
+        // Apply assigned-to-me filter
+        if (assignedToMeFilter && currentUserId) {
+          if (!task.assignments?.some((a) => a.userId === currentUserId))
+            return false;
+        }
+
+        // Apply category filter
+        if (categoryFilter !== "all") {
+          const taskCategory = categories.find((c) => c.id === task.categoryId);
+          if (taskCategory?.projectId !== categoryFilter) return false;
+        }
+
+        return true;
       })
     : [];
 
