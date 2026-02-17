@@ -10,7 +10,7 @@ export async function isAdmin(userId: string): Promise<boolean> {
 
 export async function canAccessProject(
   userId: string,
-  projectId: string
+  projectId: string,
 ): Promise<boolean> {
   if (await isAdmin(userId)) return true;
 
@@ -23,7 +23,7 @@ export async function canAccessProject(
 
 export async function canAccessCategory(
   userId: string,
-  categoryId: string
+  categoryId: string,
 ): Promise<boolean> {
   if (await isAdmin(userId)) return true;
 
@@ -61,7 +61,7 @@ export async function canAccessCategory(
 
 export async function canAccessTask(
   userId: string,
-  taskId: string
+  taskId: string,
 ): Promise<boolean> {
   if (await isAdmin(userId)) return true;
 
@@ -103,7 +103,7 @@ export async function getAssignedProjects(userId: string) {
 
 export async function getAccessibleCategories(
   userId: string,
-  projectId: string
+  projectId: string,
 ) {
   if (await isAdmin(userId)) {
     return prisma.category.findMany({
@@ -133,7 +133,7 @@ export async function getAccessibleCategories(
       const allowedIds = new Set(
         assignment.categoryPermissions
           .filter((p) => p.canAccess)
-          .map((p) => p.categoryId)
+          .map((p) => p.categoryId),
       );
       return allCategories.filter((c) => allowedIds.has(c.id));
     }
@@ -141,7 +141,7 @@ export async function getAccessibleCategories(
       const excludedIds = new Set(
         assignment.categoryPermissions
           .filter((p) => !p.canAccess)
-          .map((p) => p.categoryId)
+          .map((p) => p.categoryId),
       );
       return allCategories.filter((c) => !excludedIds.has(c.id));
     }
@@ -153,7 +153,7 @@ export async function getAccessibleCategories(
 export async function getAccessibleTasks(userId: string) {
   if (await isAdmin(userId)) {
     return prisma.task.findMany({
-      include: { category: true },
+      include: { category: true, assignments: { select: { userId: true } } },
       orderBy: { createdAt: "desc" },
     });
   }
@@ -182,7 +182,7 @@ export async function getAccessibleTasks(userId: string) {
         const allowedIds = new Set(
           assignment.categoryPermissions
             .filter((p) => p.canAccess)
-            .map((p) => p.categoryId)
+            .map((p) => p.categoryId),
         );
         allCategories
           .filter((c) => allowedIds.has(c.id))
@@ -193,7 +193,7 @@ export async function getAccessibleTasks(userId: string) {
         const excludedIds = new Set(
           assignment.categoryPermissions
             .filter((p) => !p.canAccess)
-            .map((p) => p.categoryId)
+            .map((p) => p.categoryId),
         );
         allCategories
           .filter((c) => !excludedIds.has(c.id))
@@ -214,12 +214,10 @@ export async function getAccessibleTasks(userId: string) {
     where: {
       OR: [
         { categoryId: { in: Array.from(accessibleCategoryIds) } },
-        ...(directTaskIds.length > 0
-          ? [{ id: { in: directTaskIds } }]
-          : []),
+        ...(directTaskIds.length > 0 ? [{ id: { in: directTaskIds } }] : []),
       ],
     },
-    include: { category: true },
+    include: { category: true, assignments: { select: { userId: true } } },
     orderBy: { createdAt: "desc" },
   });
 }
@@ -264,7 +262,7 @@ export async function getAccessibleAllCategories(userId: string) {
         const allowedIds = new Set(
           assignment.categoryPermissions
             .filter((p) => p.canAccess)
-            .map((p) => p.categoryId)
+            .map((p) => p.categoryId),
         );
         accessible = allCategories.filter((c) => allowedIds.has(c.id));
         break;
@@ -273,7 +271,7 @@ export async function getAccessibleAllCategories(userId: string) {
         const excludedIds = new Set(
           assignment.categoryPermissions
             .filter((p) => !p.canAccess)
-            .map((p) => p.categoryId)
+            .map((p) => p.categoryId),
         );
         accessible = allCategories.filter((c) => !excludedIds.has(c.id));
         break;
@@ -299,7 +297,7 @@ export async function logActivity(
   entityType: string,
   entityId: string,
   entityName?: string,
-  metadata?: Record<string, unknown>
+  metadata?: Record<string, unknown>,
 ) {
   await prisma.activityLog.create({
     data: {

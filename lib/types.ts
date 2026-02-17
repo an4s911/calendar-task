@@ -14,6 +14,7 @@ export interface Task {
   updatedAt: Date | string;
   completedAt?: Date | string | null;
   category?: Category;
+  assignments?: { userId: string }[];
 }
 
 export interface Project {

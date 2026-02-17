@@ -15,7 +15,7 @@ import {
   isSameMonth,
   isToday,
 } from "date-fns";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import TaskCard from "@/components/tasks/task-card";
 import TaskModal from "@/components/tasks/task-modal";
@@ -29,6 +29,9 @@ export default function MonthView() {
     setSelectedDate,
     categoryFilter,
     setCategoryFilter,
+    currentUserId,
+    assignedToMeFilter,
+    setAssignedToMeFilter,
   } = useStore();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
@@ -71,11 +74,27 @@ export default function MonthView() {
     return tasks.filter((task) => {
       if (!task.startDate || !task.show) return false;
       const taskStartRaw = new Date(task.startDate);
-      const taskStart = new Date(taskStartRaw.getFullYear(), taskStartRaw.getMonth(), taskStartRaw.getDate());
+      const taskStart = new Date(
+        taskStartRaw.getFullYear(),
+        taskStartRaw.getMonth(),
+        taskStartRaw.getDate(),
+      );
       const taskEndRaw = task.endDate ? new Date(task.endDate) : taskStart;
-      const taskEnd = task.endDate ? new Date(taskEndRaw.getFullYear(), taskEndRaw.getMonth(), taskEndRaw.getDate()) : taskStart;
+      const taskEnd = task.endDate
+        ? new Date(
+            taskEndRaw.getFullYear(),
+            taskEndRaw.getMonth(),
+            taskEndRaw.getDate(),
+          )
+        : taskStart;
       // Show task if the day is within the task's date range
       if (date < taskStart || date > taskEnd) return false;
+
+      // Apply assigned-to-me filter
+      if (assignedToMeFilter && currentUserId) {
+        if (!task.assignments?.some((a) => a.userId === currentUserId))
+          return false;
+      }
 
       // Apply category filter
       if (categoryFilter === "all") return true;
@@ -127,6 +146,17 @@ export default function MonthView() {
               {project.name}
             </Button>
           ))}
+
+          <div className="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-1" />
+
+          <Button
+            variant={assignedToMeFilter ? "default" : "outline"}
+            size="sm"
+            onClick={() => setAssignedToMeFilter(!assignedToMeFilter)}
+          >
+            <User className="h-4 w-4 mr-1" />
+            Assigned to me
+          </Button>
         </div>
 
         {/* Month Navigation */}

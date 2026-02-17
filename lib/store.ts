@@ -17,6 +17,8 @@ interface AppState {
   selectedDate: Date;
   isLoading: boolean;
   categoryFilter: CategoryFilter;
+  currentUserId: string | null;
+  assignedToMeFilter: boolean;
 
   setTasks: (tasks: Task[]) => void;
   setCategories: (categories: Category[]) => void;
@@ -26,6 +28,8 @@ interface AppState {
   setSelectedDate: (date: Date) => void;
   setIsLoading: (loading: boolean) => void;
   setCategoryFilter: (filter: CategoryFilter) => void;
+  setCurrentUserId: (id: string | null) => void;
+  setAssignedToMeFilter: (filter: boolean) => void;
 
   addTask: (task: Task) => void;
   updateTask: (id: string, task: Partial<Task>) => void;
@@ -49,6 +53,8 @@ export const useStore = create<AppState>((set) => ({
   selectedDate: new Date(),
   isLoading: false,
   categoryFilter: "all",
+  currentUserId: null,
+  assignedToMeFilter: false,
 
   setTasks: (tasks) => set({ tasks }),
   setCategories: (categories) => set({ categories }),
@@ -58,6 +64,8 @@ export const useStore = create<AppState>((set) => ({
   setSelectedDate: (date) => set({ selectedDate: date }),
   setIsLoading: (loading) => set({ isLoading: loading }),
   setCategoryFilter: (filter) => set({ categoryFilter: filter }),
+  setCurrentUserId: (id) => set({ currentUserId: id }),
+  setAssignedToMeFilter: (filter) => set({ assignedToMeFilter: filter }),
 
   addTask: (task) => set((state) => ({ tasks: [...state.tasks, task] })),
   updateTask: (id, updatedTask) =>

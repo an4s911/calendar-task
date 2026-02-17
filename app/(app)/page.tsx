@@ -5,8 +5,14 @@ import { useStore } from "@/lib/store";
 import MonthView from "@/components/calendar/month-view";
 
 export default function Home() {
-  const { setTasks, setCategories, setProjects, setSettings, setIsLoading } =
-    useStore();
+  const {
+    setTasks,
+    setCategories,
+    setProjects,
+    setSettings,
+    setIsLoading,
+    setCurrentUserId,
+  } = useStore();
 
   useEffect(() => {
     async function fetchData() {
@@ -31,6 +37,11 @@ export default function Home() {
         const settingsRes = await fetch("/api/settings");
         const settings = await settingsRes.json();
         setSettings(settings);
+
+        // Fetch current user
+        const meRes = await fetch("/api/auth/me");
+        const me = await meRes.json();
+        setCurrentUserId(me.id);
       } catch (error) {
         console.error("Error fetching data:", error);
       } finally {
@@ -39,7 +50,14 @@ export default function Home() {
     }
 
     fetchData();
-  }, [setTasks, setCategories, setProjects, setSettings, setIsLoading]);
+  }, [
+    setTasks,
+    setCategories,
+    setProjects,
+    setSettings,
+    setIsLoading,
+    setCurrentUserId,
+  ]);
 
   return (
     <div className="p-6">
