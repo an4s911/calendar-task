@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useStore } from "@/lib/store";
 import { Task, TaskStatus, TaskPriority } from "@/lib/types";
 import {
@@ -15,12 +15,6 @@ import TaskFormModal from "@/components/tasks/task-form-modal";
 import { format } from "date-fns";
 import { Calendar, Clock, Pencil, UserPlus, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-interface SimpleUser {
-  id: string;
-  fullName: string;
-  username: string;
-}
 
 interface TaskModalProps {
   open: boolean;
@@ -64,40 +58,21 @@ export default function TaskModal({
   onOpenChange,
   task,
 }: TaskModalProps) {
-  const { tasks, updateTask } = useStore();
+  const { tasks, updateTask, users, isCurrentUserAdmin } = useStore();
   const [showFormModal, setShowFormModal] = useState(false);
   const [currentTask, setCurrentTask] = useState<Task | null>(null);
   const [trackedTaskId, setTrackedTaskId] = useState<string | null>(null);
 
   // User assignment state (admin only)
-  const [users, setUsers] = useState<SimpleUser[]>([]);
   const [assignedUserIds, setAssignedUserIds] = useState<string[]>([]);
   const [showAssignDropdown, setShowAssignDropdown] = useState(false);
-  const isAdmin = users.length > 0;
-
-  // Fetch users list (admin only)
-  useEffect(() => {
-    if (!open) return;
-    fetch("/api/users")
-      .then((res) => (res.ok ? res.json() : []))
-      .then((data: SimpleUser[]) => setUsers(data))
-      .catch(() => setUsers([]));
-  }, [open]);
-
-  // Fetch existing assignments
-  useEffect(() => {
-    if (!open || !task || !isAdmin) return;
-    fetch(`/api/assignments/task?taskId=${task.id}`)
-      .then((res) => (res.ok ? res.json() : []))
-      .then((assignments: Array<{ userId: string }>) => {
-        setAssignedUserIds(assignments.map((a) => a.userId));
-      })
-      .catch(() => setAssignedUserIds([]));
-  }, [open, task, isAdmin]);
 
   const handleAssignUser = async (userId: string) => {
     if (!currentTask) return;
     setAssignedUserIds((prev) => [...prev, userId]);
+    updateTask(currentTask.id, {
+      assignments: [...(currentTask.assignments || []), { userId }],
+    });
     setShowAssignDropdown(false);
     try {
       await fetch("/api/assignments/task", {
@@ -107,12 +82,20 @@ export default function TaskModal({
       });
     } catch {
       setAssignedUserIds((prev) => prev.filter((id) => id !== userId));
+      updateTask(currentTask.id, {
+        assignments: currentTask.assignments?.filter(
+          (a) => a.userId !== userId,
+        ),
+      });
     }
   };
 
   const handleUnassignUser = async (userId: string) => {
     if (!currentTask) return;
     setAssignedUserIds((prev) => prev.filter((id) => id !== userId));
+    updateTask(currentTask.id, {
+      assignments: currentTask.assignments?.filter((a) => a.userId !== userId),
+    });
     try {
       await fetch(
         `/api/assignments/task?taskId=${currentTask.id}&userId=${userId}`,
@@ -120,6 +103,9 @@ export default function TaskModal({
       );
     } catch {
       setAssignedUserIds((prev) => [...prev, userId]);
+      updateTask(currentTask.id, {
+        assignments: [...(currentTask.assignments || []), { userId }],
+      });
     }
   };
 
@@ -127,6 +113,7 @@ export default function TaskModal({
   if (task && open && task.id !== trackedTaskId) {
     setCurrentTask(task);
     setTrackedTaskId(task.id);
+    setAssignedUserIds(task.assignments?.map((a) => a.userId) || []);
   }
   if (!open && trackedTaskId !== null) {
     setCurrentTask(null);
@@ -304,7 +291,7 @@ export default function TaskModal({
             </div>
 
             {/* Assigned Users (admin only) */}
-            {isAdmin && (
+            {isCurrentUserAdmin && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Assigned To

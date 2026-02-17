@@ -18,7 +18,9 @@ interface AppState {
   isLoading: boolean;
   categoryFilter: CategoryFilter;
   currentUserId: string | null;
+  isCurrentUserAdmin: boolean;
   assignedToMeFilter: boolean;
+  users: { id: string; fullName: string; username: string }[];
 
   setTasks: (tasks: Task[]) => void;
   setCategories: (categories: Category[]) => void;
@@ -29,7 +31,11 @@ interface AppState {
   setIsLoading: (loading: boolean) => void;
   setCategoryFilter: (filter: CategoryFilter) => void;
   setCurrentUserId: (id: string | null) => void;
+  setIsCurrentUserAdmin: (isAdmin: boolean) => void;
   setAssignedToMeFilter: (filter: boolean) => void;
+  setUsers: (
+    users: { id: string; fullName: string; username: string }[],
+  ) => void;
 
   addTask: (task: Task) => void;
   updateTask: (id: string, task: Partial<Task>) => void;
@@ -54,7 +60,9 @@ export const useStore = create<AppState>((set) => ({
   isLoading: false,
   categoryFilter: "all",
   currentUserId: null,
+  isCurrentUserAdmin: false,
   assignedToMeFilter: false,
+  users: [],
 
   setTasks: (tasks) => set({ tasks }),
   setCategories: (categories) => set({ categories }),
@@ -65,7 +73,9 @@ export const useStore = create<AppState>((set) => ({
   setIsLoading: (loading) => set({ isLoading: loading }),
   setCategoryFilter: (filter) => set({ categoryFilter: filter }),
   setCurrentUserId: (id) => set({ currentUserId: id }),
+  setIsCurrentUserAdmin: (isAdmin) => set({ isCurrentUserAdmin: isAdmin }),
   setAssignedToMeFilter: (filter) => set({ assignedToMeFilter: filter }),
+  setUsers: (users) => set({ users }),
 
   addTask: (task) => set((state) => ({ tasks: [...state.tasks, task] })),
   updateTask: (id, updatedTask) =>

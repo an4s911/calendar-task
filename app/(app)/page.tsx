@@ -12,6 +12,8 @@ export default function Home() {
     setSettings,
     setIsLoading,
     setCurrentUserId,
+    setIsCurrentUserAdmin,
+    setUsers,
   } = useStore();
 
   useEffect(() => {
@@ -42,6 +44,16 @@ export default function Home() {
         const meRes = await fetch("/api/auth/me");
         const me = await meRes.json();
         setCurrentUserId(me.id);
+        setIsCurrentUserAdmin(me.isAdmin);
+
+        // Fetch users list (for admin assignment UI)
+        if (me.isAdmin) {
+          const usersRes = await fetch("/api/users");
+          if (usersRes.ok) {
+            const users = await usersRes.json();
+            setUsers(users);
+          }
+        }
       } catch (error) {
         console.error("Error fetching data:", error);
       } finally {
@@ -57,6 +69,8 @@ export default function Home() {
     setSettings,
     setIsLoading,
     setCurrentUserId,
+    setIsCurrentUserAdmin,
+    setUsers,
   ]);
 
   return (
