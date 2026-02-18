@@ -33,6 +33,7 @@ export default function TaskFormModal({
 }: TaskFormModalProps) {
   const {
     categories,
+    projects,
     addTask,
     updateTask,
     deleteTask,
@@ -53,8 +54,14 @@ export default function TaskFormModal({
   const [endTime, setEndTime] = useState("");
   const [status, setStatus] = useState<TaskStatus>("not-started");
   const [priority, setPriority] = useState<TaskPriority>("medium");
+  const [projectId, setProjectId] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [show, setShow] = useState(true);
+
+  // Filter categories based on selected project
+  const filteredCategories = projectId
+    ? categories.filter((cat) => cat.projectId === projectId)
+    : [];
 
   // User assignment state (admin only)
   const [assignedUserIds, setAssignedUserIds] = useState<string[]>([]);
@@ -80,6 +87,9 @@ export default function TaskFormModal({
       setPriority(task.priority);
       setCategoryId(task.categoryId);
       setShow(task.show);
+      // Derive project from the task's category
+      const taskCategory = categories.find((c) => c.id === task.categoryId);
+      setProjectId(taskCategory?.projectId || "");
       const ids = task.assignments?.map((a) => a.userId) || [];
       setAssignedUserIds(ids);
       originalAssignedIds.current = ids;
@@ -98,7 +108,8 @@ export default function TaskFormModal({
       setEndTime("");
       setStatus("not-started");
       setPriority("medium");
-      setCategoryId(categories[0]?.id || "");
+      setProjectId("");
+      setCategoryId("");
       setShow(true);
       setAssignedUserIds([]);
       originalAssignedIds.current = [];
@@ -236,6 +247,29 @@ export default function TaskFormModal({
               />
             </div>
 
+            {/* Project */}
+            <div>
+              <Label htmlFor="project">Project *</Label>
+              <Select
+                id="project"
+                value={projectId}
+                onChange={(e) => {
+                  setProjectId(e.target.value);
+                  setCategoryId("");
+                }}
+                required
+              >
+                <option value="" disabled>
+                  Select a project
+                </option>
+                {projects.map((proj) => (
+                  <option key={proj.id} value={proj.id}>
+                    {proj.name}
+                  </option>
+                ))}
+              </Select>
+            </div>
+
             {/* Category */}
             <div>
               <Label htmlFor="category">Category *</Label>
@@ -244,8 +278,12 @@ export default function TaskFormModal({
                 value={categoryId}
                 onChange={(e) => setCategoryId(e.target.value)}
                 required
+                disabled={!projectId}
               >
-                {categories.map((cat) => (
+                <option value="" disabled>
+                  {projectId ? "Select a category" : "Select a project first"}
+                </option>
+                {filteredCategories.map((cat) => (
                   <option key={cat.id} value={cat.id}>
                     {cat.name}
                   </option>
